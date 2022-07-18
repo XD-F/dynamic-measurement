@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Jul 18 15:07:49 2022
+
+@author: feng
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
+from BFGS import *
+import config
+import mod
+### Minimization ###
+
+### Plot Setting ###
+plt.rcParams['figure.dpi'] = 300
+
+
+### Environment Data ###
+v_up = 2  # rising speed of balloon
+
+
+# RH and Temperature Data
+height_sv = np.array([4, 20, 80, 110, 150])
+Temp_sv = np.array([20, 17, 12, 11, 10])
+RH_sv = np.array([65, 63, 80, 55, 60])
+
+# Cubic Spline Interpolation
+height_interp = np.linspace(4, 150, int((150-4)/2 + 1))
+
+fun_Temp = interp1d(height_sv, Temp_sv, kind='cubic')
+Temp_interp = fun_Temp(height_interp)
+
+fun_RH = interp1d(height_sv, RH_sv, kind='cubic')
+RH_interp = fun_RH(height_interp)
+
+
+# Wagner Equation
+A = -7.76451
+B = 1.45838
+C = -2.7758
+D = -1.23303
+Pc = 221200 # [hPa] Critical Pressure
+Tc = 647.3  # [K]   Critical Temperature
+
+t = Temp_interp
+xx = 1 - (t + 273.15) / Tc
+et = Pc * np.exp((A * xx + B * xx**1.5 + C * xx**3 + D * xx**6) / (1 - xx))
+at = 217 * et / (t + 273.15)
+WVM_interp = RH_interp / 100 * at
+
+
+# Temperature, RH, AH (distribution in height direction) #
+plt.Figure()
+plt.suptitle("cubic spline interpolation")
+plt.subplot(1, 3, 1)
+plt.plot(Temp_interp, height_interp, label="Temp(interpolation)")
+plt.scatter(Temp_sv, height_sv, c='r')
+plt.xlabel("Temperature / centi")
+plt.ylabel("Height / m")
+
+plt.subplot(1, 3, 2)
+plt.plot(RH_interp, height_interp, label="RH(interpolation)")
+plt.scatter(RH_sv, height_sv, c='r')
+plt.xlabel("RH / %")
+plt.yticks(())
+
+plt.subplot(1, 3, 3)
+plt.plot(WVM_interp, height_interp, label="RH(interpolation)")
+plt.xlabel("WVM / g")
+plt.yticks(())
+plt.show()
+
+
+
+
+### Output of sensor in current environment ###
+env = RH_interp
+env_start = np.ones(10) * RH_interp[0]
+env_stop = np.ones(10) * RH_interp[-1]
+env = np.append(env_start, env)
+env = np.append(env, env_stop)
+l = len(env)
+config.sens = first_order_system(env, 1, env[0])  # Generate output of sensor for environment
+
+# Add white noise to humidity signal
+snr = 60  # Signal-to-noise ratio
+mag = np.power(10, snr/10)
+white_noise = produce_whitenoise(config.sens, snr)
+
+config.sens = config.sens + white_noise  # Add noise for sensor 
+target_value = env
+ideal_output = config.sens
+
+
+
+# Select a method for estimating the parameters 
+# x_opt = BFGS(sensor_system, x0=ideal_output, max_it=10)
+# x_opt = LBFGS(sensor_system, x0=ideal_output, max_it=200, m=5)
+x_opt = LBFGSB(sensor_system, x0=ideal_output, max_it=10, m=5)
+
+
+### Plot ###
+
+humi_res = x_opt
+humi_filtered = post_process(humi_res, 4)
+
+sens = first_order_system(humi_res, 1, humi_res[0])
+sensor_false = sens
+
+plt.Figure()
+plt.plot(white_noise, label="White Noise", c='b')
+plt.xlabel("Time / s")
+plt.ylabel("Humidity / %")
+plt.legend()
+plt.title("white_noise")
+plt.show()
+
+plt.Figure()
+plt.plot(target_value, label="Target Value", c='b')
+plt.plot(humi_res, label="Result", c='c')
+plt.plot(ideal_output, label="InitialValue", c='g')
+plt.plot(ideal_output, label="Sensor", c='r')
+plt.plot(sensor_false, label="Output", c='m')
+# plt.plot(humi_filtered, label="filtered", c='k')
+plt.xlabel("Time / s")
+plt.ylabel("Humidity / %")
+plt.legend()
+plt.title("result")
+plt.ylim(30, 90)
+plt.show()

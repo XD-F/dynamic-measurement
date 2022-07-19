@@ -173,24 +173,24 @@ def sim_sensor(humi, height):
     env = env[:-3]
     sens = sens[:-3]
     
-    plt.Figure()
-    plt.title("Sensor Simulation with Time")
-    plt.plot(env, label='humidity')
-    plt.plot(sens, label='sensor')
-    plt.xlabel('Time / s')
-    plt.ylabel('RH / %')
-    plt.legend()
-    plt.show()
+    # plt.Figure()
+    # plt.title("Sensor Simulation with Time")
+    # plt.plot(env, label='humidity')
+    # plt.plot(sens, label='sensor')
+    # plt.xlabel('Time / s')
+    # plt.ylabel('RH / %')
+    # plt.legend()
+    # plt.show()
     
-    plt.Figure()
-    plt.title("Sensor Simulation with Time")
-    plt.plot(env, label='humidity')
-    plt.plot(sens, label='sensor')
-    plt.xlim(0, 1800)
-    plt.xlabel('Time / s')
-    plt.ylabel('RH / %')
-    plt.legend()
-    plt.show()
+    # plt.Figure()
+    # plt.title("Sensor Simulation with Time")
+    # plt.plot(env, label='humidity')
+    # plt.plot(sens, label='sensor')
+    # plt.xlim(0, 1800)
+    # plt.xlabel('Time / s')
+    # plt.ylabel('RH / %')
+    # plt.legend()
+    # plt.show()
     
     
     # plt.Figure()
@@ -209,13 +209,13 @@ def produce_whitenoise(x, snr):
     noise = np.random.randn(len_x) * np.sqrt(Pn)
     
     ### Plot ###
-    plt.Figure()
-    plt.plot(x, label="White Noise", c='b')
-    plt.xlabel("Time / s")
-    plt.ylabel("Humidity / %")
-    plt.legend()
-    plt.title("white_noise")
-    plt.show()
+    # plt.Figure()
+    # plt.plot(x, label="White Noise", c='b')
+    # plt.xlabel("Time / s")
+    # plt.ylabel("Humidity / %")
+    # plt.legend()
+    # plt.title("white_noise")
+    # plt.show()
     
     return noise
 
